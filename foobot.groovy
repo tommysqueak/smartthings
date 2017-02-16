@@ -26,7 +26,6 @@ metadata {
 		capability "Polling"
         capability "Refresh"
         capability "Sensor"
-        capability "Thermostat"
 		capability "relativeHumidityMeasurement"
         capability "temperatureMeasurement"
         capability "carbonDioxideMeasurement"
