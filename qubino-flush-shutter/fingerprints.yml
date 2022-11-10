@@ -1,0 +1,13 @@
+zwaveManufacturer:
+  - id: QubinoFlushShutter/AC
+    deviceLabel: Qubino Flush Shutter
+    manufacturerId: 0x0159
+    productType: 0x0003
+    productId: 0x0052
+    deviceProfileName: qubino-flush-shutter
+  - id: QubinoFlushShutter/DC
+    deviceLabel: Qubino Flush Shutter
+    manufacturerId: 0x0159
+    productType: 0x0003
+    productId: 0x0053
+    deviceProfileName: qubino-flush-shutter

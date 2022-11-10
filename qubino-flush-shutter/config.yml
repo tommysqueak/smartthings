@@ -1,0 +1,4 @@
+name: 'Qubino flush shutter'
+packageKey: 'qubino.flush.shutter'
+permissions:
+  zwave: {}

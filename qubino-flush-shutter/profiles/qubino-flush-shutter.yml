@@ -1,0 +1,35 @@
+name: qubino-flush-shutter
+components:
+- id: main
+  capabilities:
+  - id: windowShade
+    version: 1
+  - id: windowShadeLevel
+    version: 1
+  - id: windowShadePreset
+    version: 1
+  - id: refresh
+    version: 1
+  categories:
+  - name: Blind
+preferences:
+  - name: "motorOperationDetection"
+    title: "Motor operation detection"
+    description: "Power usage threshold which will be interpreted as motor reaching the limit switch."
+    required: true
+    preferenceType: integer
+    definition:
+      minimum: 0
+      maximum: 127
+      default: 30
+  - name: "forcedCalibration"
+    title: "Forced calibration"
+    description: "After selection '1' option, shutter enters the calibration mode.
+    When it is finished, completing full cycle - up, down and up, set this parameter value back to first option."
+    preferenceType: enumeration
+    required: true
+    definition:
+      options:
+        0: "Calibration finished or not started"
+        1: "Start calibration process"
+      default: 0
