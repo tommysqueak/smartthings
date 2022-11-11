@@ -33,3 +33,12 @@ preferences:
         0: "Calibration finished or not started"
         1: "Start calibration process"
       default: 0
+  - name: "presetPosition"
+    title: "Preset Position"
+    description: "A preset position to move to."
+    required: false
+    preferenceType: integer
+    definition:
+      minimum: 0
+      maximum: 99
+      default: 25

@@ -11,9 +11,8 @@ local cc = (require "st.zwave.CommandClass")
 local SwitchMultilevel = (require "st.zwave.CommandClass.SwitchMultilevel")({ version = 3 })
 --- @type st.zwave.CommandClass.Basic
 local Basic = (require "st.zwave.CommandClass.Basic")({ version = 1 })
-local WindowShadeDefaults = require "st.zwave.defaults.windowShade"
-local WindowShadeLevelDefaults = require "st.zwave.defaults.windowShadeLevel"
 
+local PRESET_LEVEL = 25
 
 local function added_handler(self, device)
   -- Turn off energy reporting - by wattage (40) and by time (42), as it's not useful info.
@@ -34,7 +33,7 @@ local function to_numeric_value(new_value)
   return numeric
 end
 
-local function info_changed(driver, device, event, args)
+local function info_changed_handler(driver, device, event, args)
   local preferences = {
     motorOperationDetection = { parameter_number = 76, size = 1 },
     forcedCalibration = { parameter_number = 78, size = 1 }
@@ -54,12 +53,11 @@ local function info_changed(driver, device, event, args)
   end
 end
 
-local function shade_event_handler(self, device, cmd)
-  WindowShadeDefaults.zwave_handlers[cc.SWITCH_MULTILEVEL][SwitchMultilevel.REPORT](self, device, cmd)
-  WindowShadeLevelDefaults.zwave_handlers[cc.SWITCH_MULTILEVEL][SwitchMultilevel.REPORT](self, device, cmd)
-end
+--------------------------------------------------------------------------------------------
+-- Commands
+--------------------------------------------------------------------------------------------
 
-local function window_shade_level_change(self, device, level, cmd)
+local function send_level(driver, device, level, cmd)
   device:send_to_component(SwitchMultilevel:Set({ value = level }), cmd.component)
 
   if cmd.component ~= "main" then
@@ -71,26 +69,23 @@ local function window_shade_level_change(self, device, level, cmd)
   end
 end
 
---------------------------------------------------------------------------------------------
--- Commands
---------------------------------------------------------------------------------------------
+local function set_preset_level(driver, device, cmd)
+  local preset_level = device.preferences.presetPosition or PRESET_LEVEL
+  send_level(driver, device, preset_level, cmd)
+end
 
-local function set_shade_level(self, device, cmd)
+local function set_level(driver, device, cmd)
   local level = math.max(math.min(cmd.args.shadeLevel, 99), 0)
-  window_shade_level_change(self, device, level, cmd)
+  send_level(driver, device, level, cmd)
 end
 
 local function open(driver, device, cmd)
-  window_shade_level_change(driver, device, 99, cmd)
+  send_level(driver, device, 99, cmd)
 end
 
 local function close(driver, device, cmd)
-  window_shade_level_change(driver, device, 0, cmd)
+  send_level(driver, device, 0, cmd)
 end
-
---------------------------------------------------------------------------------------------
--- Register message handlers and run driver
---------------------------------------------------------------------------------------------
 
 local driver_template = {
   NAME = "Qubino flush shutter",
@@ -99,19 +94,13 @@ local driver_template = {
     capabilities.windowShadeLevel,
     capabilities.windowShadePreset,
     capabilities.statelessCurtainPowerButton,
-    capabilities.battery
-  },
-  zwave_handlers = {
-    [cc.BASIC] = {
-      [Basic.REPORT] = shade_event_handler
-    },
-    [cc.SWITCH_MULTILEVEL] = {
-      [SwitchMultilevel.REPORT] = shade_event_handler
-    },
   },
   capability_handlers = {
     [capabilities.windowShadeLevel.ID] = {
-      [capabilities.windowShadeLevel.commands.setShadeLevel.NAME] = set_shade_level
+      [capabilities.windowShadeLevel.commands.setShadeLevel.NAME] = set_level
+    },
+    [capabilities.windowShadePreset.ID] = {
+      [capabilities.windowShadePreset.commands.presetPosition.NAME] = set_preset_level
     },
     [capabilities.windowShade.ID] = {
       [capabilities.windowShade.commands.open.NAME] = open,
@@ -120,7 +109,7 @@ local driver_template = {
   },
   lifecycle_handlers = {
     added = added_handler,
-    infoChanged = info_changed
+    infoChanged = info_changed_handler
   },
 }
 
