@@ -11,13 +11,19 @@ local cc = (require "st.zwave.CommandClass")
 local SwitchMultilevel = (require "st.zwave.CommandClass.SwitchMultilevel")({ version = 3 })
 --- @type st.zwave.CommandClass.Basic
 local Basic = (require "st.zwave.CommandClass.Basic")({ version = 1 })
+--- @type st.zwave.CommandClass.Meter
+local Meter = (require "st.zwave.CommandClass.Meter")({version=3})
 
 local PRESET_LEVEL = 25
 
-local function added_handler(self, device)
-  -- Turn off energy reporting - by wattage (40) and by time (42), as it's not useful info.
-  device:send(Configuration:Set({ parameter_number = 40, size = 1, configuration_value = 0 }))
+local SHUTTER_LAST_DIRECTION_EVENT = "shutter_last_direction_event"
+local SHUTTER_TARGET_LEVEL = "shutter_target_level"
+
+local function added_handler(driver, device)
+  -- Turn off energy reporting - by wattage by time (42), as it's not useful info.
   device:send(Configuration:Set({ parameter_number = 42, size = 1, configuration_value = 0 }))
+  -- Get wattage reports, so we can get the level when it moves
+  device:send(Configuration:Set({ parameter_number = 40, size = 1, configuration_value = 1 }))
   -- Default to shutter mode
   device:send(Configuration:Set({ parameter_number = 71, size = 1, configuration_value = 0 }))
   device:emit_event(capabilities.windowShade.supportedWindowShadeCommands({ "open", "close", "pause" },
@@ -39,6 +45,9 @@ local function info_changed_handler(driver, device, event, args)
     forcedCalibration = { parameter_number = 78, size = 1 }
   }
 
+  -- Get wattage reports, so we can get the level when it moves
+  device:send(Configuration:Set({ parameter_number = 40, size = 1, configuration_value = 1 }))
+
   for id, value in pairs(device.preferences) do
     if preferences[id] and args.old_st_store.preferences[id] ~= value then
       local new_parameter_value = to_numeric_value(device.preferences[id])
@@ -52,6 +61,31 @@ local function info_changed_handler(driver, device, event, args)
     end
   end
 end
+
+local function multilevel_set_handler(driver, device, cmd)
+  local targetLevel = cmd.args.value
+  local currentLevel = device:get_latest_state("main",  capabilities.windowShadeLevel.ID, capabilities.windowShadeLevel.shadeLevel.NAME) or 0
+
+  if currentLevel > targetLevel then
+    device:emit_event(capabilities.windowShade.windowShade.closing())
+  else
+    device:emit_event(capabilities.windowShade.windowShade.opening())
+  end
+
+  device.thread:call_with_delay(4,
+    function()
+      device:send(Meter:Get({scale = Meter.scale.electric_meter.WATTS}))
+    end
+  )
+end
+
+-- When there's wattage, then the shutter is on the move - emit what's happening
+local function meter_report_handler(driver, device, cmd)
+  if cmd.args.scale == Meter.scale.electric_meter.WATTS then
+    device:send(SwitchMultilevel:Get({}))
+  end
+end
+
 
 --------------------------------------------------------------------------------------------
 -- Commands
@@ -94,6 +128,14 @@ local driver_template = {
     capabilities.windowShadeLevel,
     capabilities.windowShadePreset,
     capabilities.statelessCurtainPowerButton,
+  },
+  zwave_handlers = {
+    [cc.SWITCH_MULTILEVEL] = {
+      [SwitchMultilevel.SET] = multilevel_set_handler,
+    },
+    [cc.METER] = {
+      [Meter.REPORT] = meter_report_handler
+    }
   },
   capability_handlers = {
     [capabilities.windowShadeLevel.ID] = {
