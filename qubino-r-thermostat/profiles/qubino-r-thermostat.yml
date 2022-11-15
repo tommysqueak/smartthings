@@ -1,0 +1,59 @@
+name: qubino-r-thermostat
+components:
+  - id: main
+    capabilities:
+      - id: temperatureMeasurement
+        version: 1
+      - id: thermostatHeatingSetpoint
+        version: 1
+      - id: thermostatMode
+        version: 1
+      - id: thermostatOperatingState
+        version: 1
+      - id: powerMeter
+        version: 1
+      - id: energyMeter
+        version: 1
+      - id: refresh
+        version: 1
+    categories:
+      - name: Thermostat
+metadata:
+  deviceType: Thermostat
+  ocfDeviceType: oic.d.thermostat
+  deviceTypeId: Thermostat
+preferences:
+  - name: 'saveStateAfterPowerFail'
+    title: 'Save state after power failure'
+    description: 'Set whether the device stores or does not store the last output level in the event of a power outage.'
+    required: false
+    preferenceType: boolean
+    definition:
+      default: false
+  - name: 'autoTurnOff'
+    title: 'Automatically Turn Off (minutes)'
+    description: 'Turn off, if left on after so many minutes'
+    required: false
+    preferenceType: integer
+    definition:
+      minimum: 0
+      maximum: 542
+      default: 0
+  - name: 'tempReportOnChange'
+    title: 'Temperature Reporting Change (°C)'
+    description: 'Reports temperature when the change is by this amount °C'
+    required: false
+    preferenceType: number
+    definition:
+      minimum: 0.1
+      maximum: 12
+      default: 0.5
+  - name: 'temperatureOffset'
+    title: 'Temperature Offset (°C)'
+    description: 'Adjust temperature by this many degrees °C'
+    required: false
+    preferenceType: integer
+    definition:
+      minimum: -10
+      maximum: 10
+      default: 0

@@ -16,9 +16,6 @@ local Meter = (require "st.zwave.CommandClass.Meter")({version=3})
 
 local PRESET_LEVEL = 25
 
-local SHUTTER_LAST_DIRECTION_EVENT = "shutter_last_direction_event"
-local SHUTTER_TARGET_LEVEL = "shutter_target_level"
-
 local function added_handler(driver, device)
   -- Turn off energy reporting - by wattage by time (42), as it's not useful info.
   device:send(Configuration:Set({ parameter_number = 42, size = 1, configuration_value = 0 }))

@@ -1,0 +1,4 @@
+name: 'Qubino r thermostat'
+packageKey: 'qubino.r.thermostat'
+permissions:
+  zwave: {}

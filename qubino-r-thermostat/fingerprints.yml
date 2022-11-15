@@ -1,0 +1,7 @@
+zwaveManufacturer:
+  - id: QubinoRThermostat
+    deviceLabel: Qubino R Thermostat
+    manufacturerId: 0x0159
+    productType: 0x0002
+    productId: 0x0052
+    deviceProfileName: qubino-r-thermostat
